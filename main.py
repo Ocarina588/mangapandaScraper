@@ -70,6 +70,18 @@ def get_manga_name(soup):
         status = check_good_name(name)
     return (name)
 
+def check_error_chapter(source):
+    if source == None:
+        print('error: chapter not found')
+        return (None)
+
+    soup = BeautifulSoup(source, 'lxml')
+
+    if soup.find('select', id='pageMenu') == None:
+        print('error: chapter not found')
+        return (None)
+    return (soup)
+
 def download_chapter(url, path):
     i = 0
     chapter = url.split('/')[-1]
@@ -77,13 +89,12 @@ def download_chapter(url, path):
     source = request_url(url)
 
     print('=== Downloading chapter ' + chapter + '===' )
-    if (source == None):
-        print('error: chapter not found')
-        return
-    
-    soup = BeautifulSoup(source, 'lxml')
-    my_mkdir(path)
 
+    soup = check_error_chapter(source)
+    if soup == None:
+        return
+
+    my_mkdir(path)
     for img_href in soup.find('select', id='pageMenu').find_all('option'):
         i = i + 1
         download_img(img_href['value'], path, i)
@@ -96,16 +107,37 @@ def my_mkdir(path):
         print(error)
         sys.exit(1)
 
+def get_begining_chapter(max):
+    print('There\'s ' + str(max) + ' chapters')
+    while (1):
+        try:
+            begining = int(input('Which chapter do you wanna start with?: '))
+        except:
+            print('The chapter need to be a integer')
+            continue
+        if begining <= max and begining > 0:
+            return (begining)
+        else:
+            print('The chapter doesn\'t exist')
+    
 def download_manga():
     source = request_manga()
     soup = BeautifulSoup(source, 'lxml')
     name = get_manga_name(soup)
     path = get_manga_dir() + name
     data = soup.find('div', id='chapterlist')
+    i = 0
+    if data == None:
+        print('No chapter found')
+        return
 
+    begining = get_begining_chapter(len(data.find_all('a')))
     my_mkdir(path)
-    
+
     for chapter in data.find_all('a'):
+        i = i + 1
+        if i < begining:
+            continue
         download_chapter(MANGA_PANDA_URL + chapter['href'], path)
 
 download_manga()
