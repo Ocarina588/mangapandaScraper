@@ -6,18 +6,20 @@ import sys
 MANGA_PANDA_URL = 'http://www.mangapanda.com' 
 
 def request_url(url):
-    try:
-        source = requests.get(url).text
-    except:
+    source = requests.get(url)
+    if source.status_code != 200:
         return (None)
-    return (source)
+    return (source.text)
 
-def request_manga():
-    source = request_url(input('manga url: '))
-    if (source == None):
-        print('error: manga not found')
-        sys.exit(1)
-    return (source)
+def request_manga(url):
+    if url.find(MANGA_PANDA_URL + '/') != 0:
+        return (None)
+    if len(url.split(MANGA_PANDA_URL + '/')[1].split('/')) != 1:
+        return (None)
+    source = request_url(url)
+    if source == None:
+        return None
+    return (BeautifulSoup(source, 'lxml'))
 
 def request_img(url):
     source = request_url(url)
@@ -64,10 +66,10 @@ def check_good_name(name):
 
 def get_manga_name(soup):
     name = soup.find('div', id='mangaproperties').find('h1').text
-    status = check_good_name(name)
-    while (status == False):
-        name = input('Manga name contains forbidden characters, pleas rename the folder: ')
-        status = check_good_name(name)
+    # status = check_good_name(name)
+    # while (status == False):
+    #     name = input('Manga name contains forbidden characters, pleas rename the folder: ')
+    #     status = check_good_name(name)
     return (name)
 
 def check_error_chapter(source):
@@ -126,18 +128,12 @@ def download_manga():
     name = get_manga_name(soup)
     path = get_manga_dir() + name
     data = soup.find('div', id='chapterlist')
-    i = 0
+
     if data == None:
         print('No chapter found')
         return
 
-    begining = get_begining_chapter(len(data.find_all('a')))
     my_mkdir(path)
 
     for chapter in data.find_all('a'):
-        i = i + 1
-        if i < begining:
-            continue
         download_chapter(MANGA_PANDA_URL + chapter['href'], path)
-
-download_manga()
