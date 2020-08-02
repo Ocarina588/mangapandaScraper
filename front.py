@@ -1,19 +1,39 @@
 from tkinter import *
-import requests
+from tkinter import ttk
+from tkinter import filedialog
 from PIL import Image, ImageTk
+import threading
+import tempfile
+import requests
+import sys
 import back as B
+import os
 
-def enable_scene_1(a):
+def start_dowload():
+    B.PATH_DIR = filedialog.askdirectory()
+    button_download.place_forget()
+    set_progress_bar()
+    thread.start()
+
+
+def enable_scene_1():
+    disable_scene_2()
     set_photo_mangapanda_label()
     set_input_url()
     set_button_find()
     error.place_forget()
-    manga_name.place_forget()
+    manga_name.pack_forget()
+    button_download.pack_forget()
 
 def disable_scene_1():
     photo_mangapanda_label.place_forget()
     input_url.place_forget()
     button_find.place_forget()
+
+def disable_scene_2():
+    button_download.pack_forget()
+    manga_name.pack_forget()
+    photo_manga_label.pack_forget()
 
 def set_photo_mangapanda_label():
     photo_mangapanda_label.config(bg='#1BF186')
@@ -36,13 +56,46 @@ def set_button_find():
     y = HEIGHT/2 + 30
     button_find.place(x=x, y=y)
 
+def set_button_download():
+    x = WIDTH/2 - 30
+    y = 325
+    button_download.place(x=x, y=y)
+
 def set_manga_name(name):
     manga_name.config(text=name)
     manga_name.pack()
 
-def main():
-    enable_scene_1(None)
-    window.mainloop()
+def set_photo_manga(source):
+    temp.seek(0)
+    temp.truncate()
+    img_url = source.find('div', id='mangaimg').find('img')['src']
+    img_data = requests.get(img_url)
+    temp.write(img_data.content)
+    img = Image.open(temp.name)
+    img = img.resize((200, 270))
+    x = WIDTH/2 - 200/2 - 100
+    y = HEIGHT/2 - 270/2
+    photo_manga = ImageTk.PhotoImage(image=img)
+    photo_manga_label.config(image=photo_manga, anchor=E)
+    photo_manga_label.image=photo_manga
+    photo_manga_label.place(x=x, y=y)
+
+def set_manga_chapter():
+    x = WIDTH/2 + 70
+    y = HEIGHT/2 - 50
+    manga_chapter.place(x=x, y=y)
+
+def set_progress_bar():
+    x = 70
+    y = 325
+    progress_bar['value'] = 0
+    progress_bar.place(x=x, y=y)
+
+def set_manga_chapter_nb(source):
+    x = WIDTH/2 + 100
+    y = HEIGHT/2
+    manga_chapter_nb.config(text=str(B.get_manga_nb_chapters(source)))
+    manga_chapter_nb.place(x=x, y=y)
 
 def find_manga():
     source = B.request_manga(input_url.get())
@@ -51,22 +104,44 @@ def find_manga():
     else:
         disable_scene_1()
         set_manga_name(B.get_manga_name(source))
-        temp = open("temp.jpg", "wb")
-        temp.truncate(0)
-        img_url = source.find('div', id='mangaimg').find('img')['src']
-        img_data = requests.get(img_url)
-        temp.write(img_data.content)
-        temp.close()
-        img = Image.open('temp.jpg')
-        photo_manga = ImageTk.PhotoImage(img)
-        photo_manga_label.config(image=photo_manga)
-        photo_manga_label.image=photo_manga
-        photo_manga_label.pack()
+        set_photo_manga(source)
+        set_button_download()
+        set_manga_chapter()
+        set_manga_chapter_nb(source)
 
+def download_manga():
+    soup = B.request_manga(input_url.get())
+    name = B.get_manga_name(soup)
+    path = B.PATH_DIR + '//' + name
+    data = soup.find('div', id='chapterlist')
+    STEP = 0
 
+    if data == None:
+        print('No chapter found')
+        return
+
+    B.my_mkdir(path)
+    tab = data.find_all('a')
+
+    for chapter in tab:
+        STEP = STEP + 1
+        progress_bar['value'] = STEP * 100 / len(tab)
+        window.update_idletasks()
+        B.download_chapter(B.MANGA_PANDA_URL + chapter['href'], path)
+
+def on_closing():
+    window.destroy()
+    temp.close()
+    os.unlink(temp.name)
+    sys.exit(0)
+
+def main():
+    enable_scene_1()
+    window.mainloop()
 
 WIDTH = 540
 HEIGHT = 360
+STEP = 0
 
 # creating window
 window = Tk()
@@ -75,10 +150,11 @@ window.geometry(str(WIDTH) + 'x' + str(HEIGHT))
 window.minsize(WIDTH, HEIGHT)
 window.maxsize(WIDTH, HEIGHT)
 window.config(background='#1BF186')
+#window.protocol("WM_DELETE_WINDOW", on_closing)
+thread = threading.Thread(target=download_manga)
 
 # creating temp file
-temp = open("temp.jpg", "w")
-temp.close()
+temp = tempfile.NamedTemporaryFile(delete=False)
 
 # creating photos
 photo_mangapanda = PhotoImage(file='mangapanda.png')
@@ -88,14 +164,18 @@ photo_manga = PhotoImage()
 photo_mangapanda_label = Label(window, image=photo_mangapanda)
 photo_manga_label = Label(window, imgage=None)
 error = Label(window, text='NOT FOUND', bg='#1BF186', fg='red', font='Arial 18 bold')
-manga_name = Label(window, bg='#1BF186', text='', font='Arial 25 bold')
+manga_name = Label(window, bg='#1BF186', text='', font='Arial 20 bold')
+manga_chapter = Label(window, bg='#1BF186', text='Chapters', font='Arial 18 bold')
+manga_chapter_nb = Label(window, bg='#1BF186', text='', font='Arial 18')
+
+# creating progress bar
+progress_bar = ttk.Progressbar(window, length=400, mode='determinate')
 
 # creating inputs
 input_url = Entry(window, width=50)
 
 # creating buttons
 button_find = Button(window, text="Find", command=find_manga)
-
-window.bind('<KeyPress>', enable_scene_1)
+button_download = Button(window, text="Download", command=start_dowload)
 
 main()
