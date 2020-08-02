@@ -150,7 +150,7 @@ window.geometry(str(WIDTH) + 'x' + str(HEIGHT))
 window.minsize(WIDTH, HEIGHT)
 window.maxsize(WIDTH, HEIGHT)
 window.config(background='#1BF186')
-#window.protocol("WM_DELETE_WINDOW", on_closing)
+window.protocol("WM_DELETE_WINDOW", on_closing)
 thread = threading.Thread(target=download_manga)
 
 # creating temp file
