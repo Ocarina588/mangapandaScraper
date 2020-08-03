@@ -52,6 +52,7 @@ def disable_scene_2():
     photo_manga_label.place_forget()
     progress_bar.place_forget()
     manga_chapter.place_forget()
+    error_download.place_forget()
     manga_chapter_nb.place_forget()
 
 def set_photo_mangapanda_label():
@@ -64,6 +65,11 @@ def set_input_url():
     x = WIDTH/2 - 140
     y = HEIGHT/2
     input_url.place(x=x, y=y)
+
+def set_error_download():
+    x = 90
+    y = 325
+    error_download.place(x=x, y=y)
 
 def set_error_message():
     x = WIDTH/2 - 65
@@ -139,7 +145,7 @@ def download_chapter(url, path, len_tab):
     if soup == None:
         return
 
-    B.my_mkdir(path)
+    my_mkdir(path)
     data = soup.find('select', id='pageMenu').find_all('option')
 
     for img_href in data:
@@ -153,6 +159,13 @@ def download_chapter(url, path, len_tab):
         window.update_idletasks()
     print('')
 
+def try_download_manga():
+    try:
+        download_manga()
+    except:
+        progress_bar.place_forget()
+        set_error_download()
+
 def download_manga():
     global STEP
     soup = B.request_manga(input_url.get())
@@ -165,7 +178,7 @@ def download_manga():
         print('No chapter found')
         return
 
-    B.my_mkdir(path)
+    my_mkdir(path)
     tab = data.find_all('a')
     len_tab = len(tab)
     for chapter in tab:
@@ -176,6 +189,14 @@ def on_closing():
     temp.close()
     os.unlink(temp.name)
     sys.exit(0)
+
+def my_mkdir(path):
+    try:
+        os.mkdir(path)
+    except:
+        progress_bar.place_forget()
+        set_error_download()
+        sys.exit(1)
 
 def main():
     enable_scene_1()
@@ -206,6 +227,7 @@ photo_manga = PhotoImage()
 photo_mangapanda_label = Label(window, image=photo_mangapanda)
 photo_manga_label = Label(window, imgage=None)
 error = Label(window, text='NOT FOUND', bg='#1BF186', fg='red', font='Arial 18 bold')
+error_download = Label(window, text='ERROR WHILE DOWNLOADING', bg='#1BF186', fg='red', font='Arial 18 bold')
 manga_name = Label(window, bg='#1BF186', text='', font='Arial 20 bold')
 manga_chapter = Label(window, bg='#1BF186', text='Chapters', font='Arial 18 bold')
 manga_chapter_nb = Label(window, bg='#1BF186', text='', font='Arial 18')
@@ -221,5 +243,3 @@ input_url.insert(0, B.MANGA_PANDA_URL + '/')
 button_find = Button(window, text="Find", command=find_manga)
 button_download = Button(window, text="Download", command=start_dowload)
 button_back = Button(window, text="<--", command=enable_scene_1)
-
-main()

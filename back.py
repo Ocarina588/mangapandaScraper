@@ -50,15 +50,6 @@ def download_img(img_href, path, i):
     except OSError as error:
         print(error)
         return
-    
-def get_manga_dir():
-    while (1):
-        path = input('where do you want to download the manga? (need full path): ')
-        if os.path.isdir(path) == True:
-            path = path + '\\'
-            return (path)
-        else:
-            print('the path given isn\'t a directory')
 
 def check_good_name(name):
     for x in [':', '\\', '/', '<', '>', '?', '!', '*', '|']:
@@ -85,10 +76,3 @@ def check_error_chapter(source):
         print('error: chapter not found')
         return (None)
     return (soup)
-
-def my_mkdir(path):
-    try:
-        os.mkdir(path)
-    except OSError as error:
-        print(error)
-        sys.exit(1)

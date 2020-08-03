@@ -1,0 +1,3 @@
+import front
+
+front.main()
