@@ -47,6 +47,7 @@ def disable_scene_2():
     global STOP_THREAD
     STOP_THREAD = True
     button_download.place_forget()
+    finished_download.place_forget()
     button_back.place_forget()
     manga_name.pack_forget()
     photo_manga_label.place_forget()
@@ -112,6 +113,11 @@ def set_manga_chapter():
     x = WIDTH/2 + 70
     y = HEIGHT/2 - 50
     manga_chapter.place(x=x, y=y)
+
+def set_finished_download():
+    x = 120
+    y = 325
+    finished_download.place(x=x, y=y)
 
 def set_progress_bar():
     x = 70
@@ -183,6 +189,8 @@ def download_manga():
     len_tab = len(tab)
     for chapter in tab:
         download_chapter(B.MANGA_PANDA_URL + chapter['href'], path, len_tab)
+    progress_bar.place_forget()
+    set_finished_download()
 
 def on_closing():
     window.destroy()
@@ -228,6 +236,7 @@ photo_mangapanda_label = Label(window, image=photo_mangapanda)
 photo_manga_label = Label(window, imgage=None)
 error = Label(window, text='NOT FOUND', bg='#1BF186', fg='red', font='Arial 18 bold')
 error_download = Label(window, text='ERROR WHILE DOWNLOADING', bg='#1BF186', fg='red', font='Arial 18 bold')
+finished_download = Label(window, text='DOWNLOAD COMPLETED', bg='#1BF186', fg='green', font='Arial 18 bold')
 manga_name = Label(window, bg='#1BF186', text='', font='Arial 20 bold')
 manga_chapter = Label(window, bg='#1BF186', text='Chapters', font='Arial 18 bold')
 manga_chapter_nb = Label(window, bg='#1BF186', text='', font='Arial 18')
