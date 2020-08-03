@@ -13,7 +13,20 @@ def start_dowload():
     B.PATH_DIR = filedialog.askdirectory()
     button_download.place_forget()
     set_progress_bar()
+    thread = threading.Thread(target=download_manga)
+    thread.daemon = True
     thread.start()
+
+def enable_scene_2(source):
+    global STOP_THREAD
+    STOP_THREAD = False
+    disable_scene_1()
+    set_button_back()
+    set_manga_name(B.get_manga_name(source))
+    set_photo_manga(source)
+    set_button_download()
+    set_manga_chapter()
+    set_manga_chapter_nb(source)
 
 def enable_scene_1():
     disable_scene_2()
@@ -28,11 +41,18 @@ def disable_scene_1():
     photo_mangapanda_label.place_forget()
     input_url.place_forget()
     button_find.place_forget()
+    error.place_forget()
 
 def disable_scene_2():
-    button_download.pack_forget()
+    global STOP_THREAD
+    STOP_THREAD = True
+    button_download.place_forget()
+    button_back.place_forget()
     manga_name.pack_forget()
-    photo_manga_label.pack_forget()
+    photo_manga_label.place_forget()
+    progress_bar.place_forget()
+    manga_chapter.place_forget()
+    manga_chapter_nb.place_forget()
 
 def set_photo_mangapanda_label():
     photo_mangapanda_label.config(bg='#1BF186')
@@ -54,6 +74,9 @@ def set_button_find():
     x = WIDTH/2 - 10
     y = HEIGHT/2 + 30
     button_find.place(x=x, y=y)
+
+def set_button_back():
+    button_back.place(x=0, y=0)
 
 def set_button_download():
     x = WIDTH/2 - 30
@@ -101,12 +124,7 @@ def find_manga():
     if source == None:
         set_error_message()
     else:
-        disable_scene_1()
-        set_manga_name(B.get_manga_name(source))
-        set_photo_manga(source)
-        set_button_download()
-        set_manga_chapter()
-        set_manga_chapter_nb(source)
+        enable_scene_2(source)
 
 def download_chapter(url, path, len_tab):
     global STOP_THREAD
@@ -165,7 +183,7 @@ def main():
 
 WIDTH = 540
 HEIGHT = 360
-STOP_THREAD = False
+STOP_THREAD = True
 STEP = 0
 
 # creating window
@@ -176,8 +194,6 @@ window.minsize(WIDTH, HEIGHT)
 window.maxsize(WIDTH, HEIGHT)
 window.config(background='#1BF186')
 window.protocol("WM_DELETE_WINDOW", on_closing)
-thread = threading.Thread(target=download_manga)
-thread.daemon = True
 
 # creating temp file
 temp = tempfile.NamedTemporaryFile(delete=False)
@@ -199,10 +215,11 @@ progress_bar = ttk.Progressbar(window, length=400, mode='determinate')
 
 # creating inputs
 input_url = Entry(window, width=50)
-input_url.insert(0, B.MANGA_PANDA_URL)
+input_url.insert(0, B.MANGA_PANDA_URL + '/')
 
 # creating buttons
 button_find = Button(window, text="Find", command=find_manga)
 button_download = Button(window, text="Download", command=start_dowload)
+button_back = Button(window, text="<--", command=enable_scene_1)
 
 main()
