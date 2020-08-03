@@ -86,40 +86,9 @@ def check_error_chapter(source):
         return (None)
     return (soup)
 
-def download_chapter(url, path):
-    i = 0
-    chapter = url.split('/')[-1]
-    path = path + '\\' + chapter + '\\'
-    source = request_url(url)
-
-    print('=== Downloading chapter ' + chapter + '===' )
-
-    soup = check_error_chapter(source)
-    if soup == None:
-        return
-
-    my_mkdir(path)
-    for img_href in soup.find('select', id='pageMenu').find_all('option'):
-        i = i + 1
-        download_img(img_href['value'], path, i)
-    print('')
-
 def my_mkdir(path):
     try:
         os.mkdir(path)
     except OSError as error:
         print(error)
         sys.exit(1)
-
-def get_begining_chapter(max):
-    print('There\'s ' + str(max) + ' chapters')
-    while (1):
-        try:
-            begining = int(input('Which chapter do you wanna start with?: '))
-        except:
-            print('The chapter need to be a integer')
-            continue
-        if begining <= max and begining > 0:
-            return (begining)
-        else:
-            print('The chapter doesn\'t exist')

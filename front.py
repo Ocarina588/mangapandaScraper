@@ -15,7 +15,6 @@ def start_dowload():
     set_progress_bar()
     thread.start()
 
-
 def enable_scene_1():
     disable_scene_2()
     set_photo_mangapanda_label()
@@ -109,7 +108,35 @@ def find_manga():
         set_manga_chapter()
         set_manga_chapter_nb(source)
 
+def download_chapter(url, path, len_tab):
+    global STOP_THREAD
+    global STEP
+    i = 0
+    chapter = url.split('/')[-1]
+    path = path + '\\' + chapter + '\\'
+    source = B.request_url(url)
+    print('=== Downloading chapter ' + chapter + '===' )
+
+    soup = B.check_error_chapter(source)
+    if soup == None:
+        return
+
+    B.my_mkdir(path)
+    data = soup.find('select', id='pageMenu').find_all('option')
+
+    for img_href in data:
+        if STOP_THREAD == True:
+            STOP_THREAD = False
+            sys.exit(0)
+        i = i + 1
+        B.download_img(img_href['value'], path, i)
+        STEP = STEP + 1/len(data)
+        progress_bar['value'] = STEP * 100 / len_tab
+        window.update_idletasks()
+    print('')
+
 def download_manga():
+    global STEP
     soup = B.request_manga(input_url.get())
     name = B.get_manga_name(soup)
     path = B.PATH_DIR + '//' + name
@@ -122,12 +149,9 @@ def download_manga():
 
     B.my_mkdir(path)
     tab = data.find_all('a')
-
+    len_tab = len(tab)
     for chapter in tab:
-        STEP = STEP + 1
-        progress_bar['value'] = STEP * 100 / len(tab)
-        window.update_idletasks()
-        B.download_chapter(B.MANGA_PANDA_URL + chapter['href'], path)
+        download_chapter(B.MANGA_PANDA_URL + chapter['href'], path, len_tab)
 
 def on_closing():
     window.destroy()
@@ -141,6 +165,7 @@ def main():
 
 WIDTH = 540
 HEIGHT = 360
+STOP_THREAD = False
 STEP = 0
 
 # creating window
@@ -152,6 +177,7 @@ window.maxsize(WIDTH, HEIGHT)
 window.config(background='#1BF186')
 window.protocol("WM_DELETE_WINDOW", on_closing)
 thread = threading.Thread(target=download_manga)
+thread.daemon = True
 
 # creating temp file
 temp = tempfile.NamedTemporaryFile(delete=False)
@@ -173,6 +199,7 @@ progress_bar = ttk.Progressbar(window, length=400, mode='determinate')
 
 # creating inputs
 input_url = Entry(window, width=50)
+input_url.insert(0, B.MANGA_PANDA_URL)
 
 # creating buttons
 button_find = Button(window, text="Find", command=find_manga)
